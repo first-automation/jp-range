@@ -1,0 +1,17 @@
+[project]
+name = "jp-range"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "neka-nat", email = "nekanat.stock@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2.3",
+    "pydantic>=2.11.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
