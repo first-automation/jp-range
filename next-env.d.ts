@@ -1,11 +1,5 @@
 /// <reference types="next" />
-/// <reference types="next/types/global" />
 /// <reference types="next/image-types/global" />
 
-declare namespace NodeJS {
-  interface ProcessEnv {
-    NODE_ENV: 'development' | 'production' | 'test';
-  }
-}
-
-export {};
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/basic-features/typescript for more information.
