@@ -44,6 +44,9 @@ def _normalize(text: str) -> str:
 # Units such as "m" or "個" should not be captured as part of the numeric value
 # but may appear directly after the number.
 _NUM = r"([-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?)(?:[a-zA-Zぁ-んァ-ン一-龥]*)"
+# Separator pattern used between two numbers. This excludes digits and sign
+# characters so that signs for negative or positive numbers are not consumed.
+_SEP = r"[^\d+-]*"
 
 
 def _f(num: str) -> float:
@@ -178,12 +181,12 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     ),
     # 最大A、最小B / 最大値A 最小値B / 大A小B
     (
-        re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*(?:最小(?:値)?|小){_NUM}$"),
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}{_SEP}(?:最小(?:値)?|小){_NUM}$"),
         _max_min,
     ),
     # 最大A、B未満
     (
-        re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*{_NUM}未満$"),
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}{_SEP}{_NUM}未満$"),
         _max_lower_lt,
     ),
     # 最大A
@@ -198,52 +201,52 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     ),
     # A以上B以下 (allow connectors like commas or words between bounds)
     (
-        re.compile(rf"^{_NUM}以上\D*{_NUM}以下$"),
+        re.compile(rf"^{_NUM}以上{_SEP}{_NUM}以下$"),
         _range_builder(True, True),
     ),
     # A以上B未満
     (
-        re.compile(rf"^{_NUM}以上\D*{_NUM}未満$"),
+        re.compile(rf"^{_NUM}以上{_SEP}{_NUM}未満$"),
         _range_builder(True, False),
     ),
     # A超B以下
     (
-        re.compile(rf"^{_NUM}超\D*{_NUM}以下$"),
+        re.compile(rf"^{_NUM}超{_SEP}{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # A超B未満
     (
-        re.compile(rf"^{_NUM}超\D*{_NUM}未満$"),
+        re.compile(rf"^{_NUM}超{_SEP}{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aを超えB以下
     (
-        re.compile(rf"^{_NUM}を?超え\D*{_NUM}以下$"),
+        re.compile(rf"^{_NUM}を?超え{_SEP}{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aを超えB未満
     (
-        re.compile(rf"^{_NUM}を?超え\D*{_NUM}未満$"),
+        re.compile(rf"^{_NUM}を?超え{_SEP}{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aを上回りB以下
     (
-        re.compile(rf"^{_NUM}を?上回り\D*{_NUM}以下$"),
+        re.compile(rf"^{_NUM}を?上回り{_SEP}{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aを上回りB未満
     (
-        re.compile(rf"^{_NUM}を?上回り\D*{_NUM}未満$"),
+        re.compile(rf"^{_NUM}を?上回り{_SEP}{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aより大きいB以下
     (
-        re.compile(rf"^{_NUM}より大きい\D*{_NUM}以下$"),
+        re.compile(rf"^{_NUM}より大きい{_SEP}{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aより大きいB未満
     (
-        re.compile(rf"^{_NUM}より大きい\D*{_NUM}未満$"),
+        re.compile(rf"^{_NUM}より大きい{_SEP}{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Lower bound inclusive
