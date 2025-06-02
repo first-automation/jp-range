@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Callable, Optional
 import re
 
 from pydantic import BaseModel
@@ -79,197 +79,161 @@ def _f(num: str) -> float:
     return float(num)
 
 
-# Precompiled patterns for various Japanese range expressions
-_PATTERNS: list[tuple[re.Pattern[str], callable]] = [
-    # 20から30 / 20から30まで
-    (
-        re.compile(fr"^{_NUM}から{_NUM}(?:まで)?$"),
-        lambda m: Interval(
+def _range_builder(
+    lower_inclusive: bool, upper_inclusive: bool
+) -> Callable[[re.Match[str]], "Interval"]:
+    """Return a builder for a simple numeric range."""
+
+    def _build(m: re.Match[str]) -> "Interval":
+        return Interval(
             lower=_f(m.group(1)),
             upper=_f(m.group(2)),
-            lower_inclusive=True,
-            upper_inclusive=True,
-        ),
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+
+    return _build
+
+
+def _single_lower(inclusive: bool) -> Callable[[re.Match[str]], "Interval"]:
+    """Return a builder for a lower bound only."""
+
+    def _build(m: re.Match[str]) -> "Interval":
+        return Interval(
+            lower=_f(m.group(1)),
+            upper=None,
+            lower_inclusive=inclusive,
+            upper_inclusive=False,
+        )
+
+    return _build
+
+
+def _single_upper(inclusive: bool) -> Callable[[re.Match[str]], "Interval"]:
+    """Return a builder for an upper bound only."""
+
+    def _build(m: re.Match[str]) -> "Interval":
+        return Interval(
+            lower=None,
+            upper=_f(m.group(1)),
+            lower_inclusive=False,
+            upper_inclusive=inclusive,
+        )
+
+    return _build
+
+
+def _approx(m: re.Match[str]) -> "Interval":
+    val = _f(m.group(1))
+    return Interval(
+        lower=val * 0.95, upper=val * 1.05, lower_inclusive=True, upper_inclusive=True
+    )
+
+
+def _plus_minus(m: re.Match[str]) -> "Interval":
+    val = _f(m.group(1))
+    delta = _f(m.group(2))
+    return Interval(
+        lower=val - delta, upper=val + delta, lower_inclusive=True, upper_inclusive=True
+    )
+
+
+# Precompiled patterns for various Japanese range expressions
+_PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
+    # 20から30 / 20から30まで
+    (
+        re.compile(rf"^{_NUM}から{_NUM}(?:まで)?$"),
+        _range_builder(True, True),
     ),
     # 20〜30, 20-30, 20～30
     (
-        re.compile(fr"^{_NUM}[〜～\-－ー―‐]{1}{_NUM}$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=True,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}[〜～\-－ー―‐]{1}{_NUM}$"),
+        _range_builder(True, True),
     ),
     # AとBの間
     (
-        re.compile(fr"^{_NUM}と{_NUM}の?間$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}と{_NUM}の?間$"),
+        _range_builder(False, False),
     ),
     # A以上B以下
     (
-        re.compile(fr"^{_NUM}以上{_NUM}以下$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=True,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}以上{_NUM}以下$"),
+        _range_builder(True, True),
     ),
     # A以上B未満
     (
-        re.compile(fr"^{_NUM}以上{_NUM}未満$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=True,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}以上{_NUM}未満$"),
+        _range_builder(True, False),
     ),
     # A超B以下
     (
-        re.compile(fr"^{_NUM}超{_NUM}以下$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}超{_NUM}以下$"),
+        _range_builder(False, True),
     ),
     # A超B未満
     (
-        re.compile(fr"^{_NUM}超{_NUM}未満$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}超{_NUM}未満$"),
+        _range_builder(False, False),
     ),
     # Aを超えB以下
     (
-        re.compile(fr"^{_NUM}を?超え{_NUM}以下$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}を?超え{_NUM}以下$"),
+        _range_builder(False, True),
     ),
     # Aを超えB未満
     (
-        re.compile(fr"^{_NUM}を?超え{_NUM}未満$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}を?超え{_NUM}未満$"),
+        _range_builder(False, False),
     ),
     # Aを上回りB以下
     (
-        re.compile(fr"^{_NUM}を?上回り{_NUM}以下$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}を?上回り{_NUM}以下$"),
+        _range_builder(False, True),
     ),
     # Aを上回りB未満
     (
-        re.compile(fr"^{_NUM}を?上回り{_NUM}未満$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}を?上回り{_NUM}未満$"),
+        _range_builder(False, False),
     ),
     # Aより大きいB以下
     (
-        re.compile(fr"^{_NUM}より大きい{_NUM}以下$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}より大きい{_NUM}以下$"),
+        _range_builder(False, True),
     ),
     # Aより大きいB未満
     (
-        re.compile(fr"^{_NUM}より大きい{_NUM}未満$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=_f(m.group(2)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}より大きい{_NUM}未満$"),
+        _range_builder(False, False),
     ),
     # Lower bound inclusive
     (
-        re.compile(fr"^{_NUM}(?:以上|以降|以後|から)$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=None,
-            lower_inclusive=True,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}(?:以上|以降|以後|から)$"),
+        _single_lower(True),
     ),
     # Lower bound exclusive
     (
-        re.compile(fr"^{_NUM}(?:超|を?超える|より大きい|より上|を?上回る)$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)),
-            upper=None,
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}(?:超|を?超える|より大きい|より上|を?上回る)$"),
+        _single_lower(False),
     ),
     # Upper bound inclusive
     (
-        re.compile(fr"^{_NUM}(?:以下|以内|まで)$"),
-        lambda m: Interval(
-            lower=None,
-            upper=_f(m.group(1)),
-            lower_inclusive=False,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}(?:以下|以内|まで)$"),
+        _single_upper(True),
     ),
     # Upper bound exclusive
     (
-        re.compile(fr"^{_NUM}(?:未満|より小さい|より下|を?下回る|未到達)$"),
-        lambda m: Interval(
-            lower=None,
-            upper=_f(m.group(1)),
-            lower_inclusive=False,
-            upper_inclusive=False,
-        ),
+        re.compile(rf"^{_NUM}(?:未満|より小さい|より下|を?下回る|未到達)$"),
+        _single_upper(False),
     ),
     # Approximate: A前後 / A程度 / Aくらい
     (
-        re.compile(fr"^{_NUM}(?:前後|程度|くらい)$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)) * 0.95,
-            upper=_f(m.group(1)) * 1.05,
-            lower_inclusive=True,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}(?:前後|程度|くらい)$"),
+        _approx,
     ),
     # A±d
     (
-        re.compile(fr"^{_NUM}±{_NUM}$"),
-        lambda m: Interval(
-            lower=_f(m.group(1)) - _f(m.group(2)),
-            upper=_f(m.group(1)) + _f(m.group(2)),
-            lower_inclusive=True,
-            upper_inclusive=True,
-        ),
+        re.compile(rf"^{_NUM}±{_NUM}$"),
+        _plus_minus,
     ),
 ]
 
@@ -299,4 +263,3 @@ def parse_jp_range(text: str) -> Interval:
         if m:
             return builder(m)
     raise ValueError(f"Cannot parse range: {text}")
-
