@@ -1,6 +1,6 @@
 # jp-range
 
-jp-range is a small library for parsing Japanese numeric range expressions. It returns an `Interval` object implemented with [Pydantic](https://docs.pydantic.dev/).
+jp-range is a small library for parsing Japanese numeric range expressions. It returns an `Interval` object implemented with [Pydantic](https://docs.pydantic.dev/) or ``None`` when parsing fails.
 
 ## Installation
 
@@ -53,5 +53,6 @@ result = parse_series(s)
 - `"50より上"` – greater than 50
 - `"60より下"` – less than 60
 - `"90前後"` – roughly around 90 (5% margin)
+- `"(2,3]"` – standard interval notation
 
-`parse_jp_range` raises `ValueError` if the expression cannot be parsed.
+`parse_jp_range` returns ``None`` if the expression cannot be parsed.

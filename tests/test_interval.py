@@ -115,3 +115,16 @@ def test_approx_range():
     r = parse_jp_range("90前後")
     assert round(r.lower, 1) == 85.5
     assert round(r.upper, 1) == 94.5
+
+
+def test_interval_notation():
+    r = parse_jp_range("(2,3]")
+    assert r.lower == 2
+    assert r.upper == 3
+    assert not r.lower_inclusive
+    assert r.upper_inclusive
+
+
+def test_parse_failure_returns_none():
+    r = parse_jp_range("unknown")
+    assert r is None
