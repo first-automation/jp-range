@@ -49,3 +49,11 @@ def test_less_than():
     assert not r.upper_inclusive
     assert r.contains(59)
     assert not r.contains(60)
+
+
+def test_normalize_and_remove_spaces():
+    r = parse_jp_range("\u3000４０  以上\u3000５０ 未満\u3000")
+    assert r.lower == 40
+    assert r.upper == 50
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is False

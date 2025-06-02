@@ -4,6 +4,7 @@ from typing import Optional
 import re
 
 from pydantic import BaseModel
+import neologdn
 
 
 class Interval(BaseModel):
@@ -98,6 +99,8 @@ def parse_jp_range(text: str) -> Interval:
     ValueError
         If the text cannot be parsed.
     """
+    text = neologdn.normalize(text)
+    text = re.sub(r"\s+", "", text)
     text = text.strip()
     for pattern, builder in _PATTERNS:
         m = pattern.fullmatch(text)
