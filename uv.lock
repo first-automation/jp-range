@@ -15,14 +15,30 @@ name = "jp-range"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "neologdn" },
     { name = "pandas" },
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "neologdn", specifier = ">=0.5.4" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pydantic", specifier = ">=2.11.5" },
+]
+
+[[package]]
+name = "neologdn"
+version = "0.5.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/72/85e22c60db1373df01e8f769b7aa9c58c923a94b5321f1a6353a052e279f/neologdn-0.5.4.tar.gz", hash = "sha256:bd4d7c1e9ecf46c3b7692512ecf73d764290c7a2ccd0d462e6c5dbbc990d7c67", size = 96962 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/ee/c12047555c40a117132abe96e7a1e71601756f12fa0dc3e15b60e185a615/neologdn-0.5.4-cp312-cp312-win32.whl", hash = "sha256:f754190b02fa8e35ebdaa54e2d4ed9c136dcabb4ea4dd84d75839d2c6bf14d19", size = 48096 },
+    { url = "https://files.pythonhosted.org/packages/55/7e/6ffd7ec8b3887a3a40df7596884447906f9b9146e8cb9b9724fc06f7c823/neologdn-0.5.4-cp312-cp312-win_amd64.whl", hash = "sha256:f7652f3983bdb4bdbbfcf404258971d19ff101a6f35521b791821e46a564c42c", size = 52526 },
+    { url = "https://files.pythonhosted.org/packages/2c/7f/60474b7a056228e050ee626fc50b90e6a145a4371474aa2dcffb484e51fd/neologdn-0.5.4-cp313-cp313-win32.whl", hash = "sha256:6e71e1e8c9d06007b6cca9882aca4d8ef7215f401903179ddb88d44860468bc9", size = 47979 },
+    { url = "https://files.pythonhosted.org/packages/10/e0/fbcd0f652aacf8359832d2f4feea713a408fbdc0c319f79c3f3969c73acd/neologdn-0.5.4-cp313-cp313-win_amd64.whl", hash = "sha256:0339da8ab4c8a46dceefdbca6b201433e1d5ad6f17853417624edc795e5c4e8a", size = 52117 },
+    { url = "https://files.pythonhosted.org/packages/31/db/140ef53857b7e156eaab60f48238769f82d78a4e09e41607169af636edc6/neologdn-0.5.4-cp313-cp313t-win32.whl", hash = "sha256:3bc67b6df2974e37a1a781db01918df2e17a7c0440b39f0efa81ee2093df631a", size = 50122 },
+    { url = "https://files.pythonhosted.org/packages/40/0e/84eca160935e9ed29fdd36c161abd9e89d987f1e69f585570217593ab70f/neologdn-0.5.4-cp313-cp313t-win_amd64.whl", hash = "sha256:cc584f4ace734bf056103ed2410fdf49edc6f3cc2068aefcf81e18c2967f8455", size = 55023 },
 ]
 
 [[package]]
