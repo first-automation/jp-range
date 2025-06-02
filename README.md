@@ -6,11 +6,15 @@ The returned `Interval` is a [Pydantic](https://docs.pydantic.dev/) model.
 ## Usage
 
 ```python
-from jp_range import parse_jp_range
+from pandas import Series
+from jp_range import parse, parse_series
 
-interval = parse_jp_range("40以上50未満")
+interval = parse("40以上50未満")
 print(interval)
 print(interval.contains(45))  # True
+
+s = Series(["20～30", "50超", "未満100"])
+parse_series(s)
 ```
 
 Supported expressions include:
