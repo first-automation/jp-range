@@ -32,8 +32,6 @@ def _normalize(text: str) -> str:
             "―": "-",
             "‐": "-",
             "．": ".",
-            "，": "",
-            ",": "",
         }
     )
     return text.translate(table)
