@@ -106,6 +106,13 @@ def test_single_bound():
     assert r.lower_inclusive
 
 
+def test_single_bound_with_unit():
+    r = parse_jp_range("１０個以上")
+    assert r.lower == 10
+    assert r.upper is None
+    assert r.lower_inclusive
+
+
 def test_upper_bound():
     r = parse_jp_range("100未満")
     assert r.upper == 100
@@ -115,6 +122,12 @@ def test_upper_bound():
 
 def test_approx_range():
     r = parse_jp_range("90前後")
+    assert round(r.lower, 1) == 85.5
+    assert round(r.upper, 1) == 94.5
+
+
+def test_approx_with_unit():
+    r = parse_jp_range("90m程度")
     assert round(r.lower, 1) == 85.5
     assert round(r.upper, 1) == 94.5
 
