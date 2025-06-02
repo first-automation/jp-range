@@ -124,54 +124,54 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
         re.compile(rf"^{_NUM}と{_NUM}の?間$"),
         _range_builder(False, False),
     ),
-    # A以上B以下
+    # A以上B以下 (allow connectors like commas or words between bounds)
     (
-        re.compile(rf"^{_NUM}以上{_NUM}以下$"),
+        re.compile(rf"^{_NUM}以上\D*{_NUM}以下$"),
         _range_builder(True, True),
     ),
     # A以上B未満
     (
-        re.compile(rf"^{_NUM}以上{_NUM}未満$"),
+        re.compile(rf"^{_NUM}以上\D*{_NUM}未満$"),
         _range_builder(True, False),
     ),
     # A超B以下
     (
-        re.compile(rf"^{_NUM}超{_NUM}以下$"),
+        re.compile(rf"^{_NUM}超\D*{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # A超B未満
     (
-        re.compile(rf"^{_NUM}超{_NUM}未満$"),
+        re.compile(rf"^{_NUM}超\D*{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aを超えB以下
     (
-        re.compile(rf"^{_NUM}を?超え{_NUM}以下$"),
+        re.compile(rf"^{_NUM}を?超え\D*{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aを超えB未満
     (
-        re.compile(rf"^{_NUM}を?超え{_NUM}未満$"),
+        re.compile(rf"^{_NUM}を?超え\D*{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aを上回りB以下
     (
-        re.compile(rf"^{_NUM}を?上回り{_NUM}以下$"),
+        re.compile(rf"^{_NUM}を?上回り\D*{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aを上回りB未満
     (
-        re.compile(rf"^{_NUM}を?上回り{_NUM}未満$"),
+        re.compile(rf"^{_NUM}を?上回り\D*{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Aより大きいB以下
     (
-        re.compile(rf"^{_NUM}より大きい{_NUM}以下$"),
+        re.compile(rf"^{_NUM}より大きい\D*{_NUM}以下$"),
         _range_builder(False, True),
     ),
     # Aより大きいB未満
     (
-        re.compile(rf"^{_NUM}より大きい{_NUM}未満$"),
+        re.compile(rf"^{_NUM}より大きい\D*{_NUM}未満$"),
         _range_builder(False, False),
     ),
     # Lower bound inclusive

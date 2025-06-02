@@ -22,6 +22,22 @@ def test_parse_ge_le():
     assert r.upper_inclusive is True
 
 
+def test_parse_ge_le_with_connector():
+    r = parse_jp_range("30以上,40以下")
+    assert r.lower == 30
+    assert r.upper == 40
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
+def test_parse_ge_le_with_word_connector():
+    r = parse_jp_range("30以上そして40以下")
+    assert r.lower == 30
+    assert r.upper == 40
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
 def test_parse_ge_lt():
     r = parse_jp_range("40以上50未満")
     assert r.lower == 40
