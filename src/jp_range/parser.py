@@ -37,8 +37,10 @@ def _normalize(text: str) -> str:
     return text.translate(table)
 
 
-# Numeric pattern supporting optional decimal and sign
-_NUM = r"([-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?)"
+# Numeric pattern supporting optional decimal and sign with trailing units
+# Units such as "m" or "個" should not be captured as part of the numeric value
+# but may appear directly after the number.
+_NUM = r"([-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?)(?:[a-zA-Zぁ-んァ-ン一-龥]*)"
 
 
 def _f(num: str) -> float:
