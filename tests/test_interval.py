@@ -1,3 +1,5 @@
+import pandas as pd
+
 from jp_range import Interval, parse_jp_range
 
 
@@ -128,3 +130,12 @@ def test_interval_notation():
 def test_parse_failure_returns_none():
     r = parse_jp_range("unknown")
     assert r is None
+
+
+def test_to_pd_interval():
+    interval = Interval(lower=1, upper=3, lower_inclusive=True, upper_inclusive=False)
+    pd_interval = interval.to_pd_interval()
+    assert isinstance(pd_interval, pd.Interval)
+    assert pd_interval.left == 1
+    assert pd_interval.right == 3
+    assert pd_interval.closed == "left"
