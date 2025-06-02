@@ -93,6 +93,20 @@ def _single_upper(inclusive: bool) -> Callable[[re.Match[str]], Interval]:
     return _build
 
 
+def _single_max(m: re.Match[str]) -> Interval:
+    """Return a builder for '最大A' or '大A'."""
+    return Interval(
+        lower=None, upper=_f(m.group(1)), lower_inclusive=False, upper_inclusive=True
+    )
+
+
+def _single_min(m: re.Match[str]) -> Interval:
+    """Return a builder for '最小B' or '小B'."""
+    return Interval(
+        lower=_f(m.group(1)), upper=None, lower_inclusive=True, upper_inclusive=False
+    )
+
+
 def _approx(m: re.Match[str]) -> Interval:
     val = _f(m.group(1))
     return Interval(
@@ -128,6 +142,16 @@ def _max_min(m: re.Match[str]) -> Interval:
     )
 
 
+def _max_lower_lt(m: re.Match[str]) -> Interval:
+    """Build Interval from patterns like '最大10、-5未満'."""
+    return Interval(
+        lower=_f(m.group(2)),
+        upper=_f(m.group(1)),
+        lower_inclusive=False,
+        upper_inclusive=True,
+    )
+
+
 # Precompiled patterns for various Japanese range expressions
 _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     # Standard interval notation like "(2,3]" or "[1,5)"
@@ -154,6 +178,21 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     (
         re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*(?:最小(?:値)?|小){_NUM}$"),
         _max_min,
+    ),
+    # 最大A、B未満
+    (
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*{_NUM}未満$"),
+        _max_lower_lt,
+    ),
+    # 最大A
+    (
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}$"),
+        _single_max,
+    ),
+    # 最小B
+    (
+        re.compile(rf"^(?:最小(?:値)?|小){_NUM}$"),
+        _single_min,
     ),
     # A以上B以下 (allow connectors like commas or words between bounds)
     (
@@ -259,8 +298,64 @@ def parse_jp_range(text: str) -> Interval:
     """
     text = _normalize(text)
     text = text.strip()
-    for pattern, builder in _PATTERNS:
-        m = pattern.fullmatch(text)
-        if m:
-            return builder(m)
+
+    def _parse_atomic(segment: str) -> Interval | None:
+        for pattern, builder in _PATTERNS:
+            m = pattern.fullmatch(segment)
+            if m:
+                return builder(m)
+        return None
+
+    result = _parse_atomic(text)
+    if result is not None:
+        return result
+
+    parts = [p for p in re.split(r"[、,，]", text) if p]
+    if len(parts) > 1:
+        intervals = []
+        for part in parts:
+            r = _parse_atomic(part)
+            if r is None:
+                return None
+            intervals.append(r)
+
+        def _intersect(a: Interval, b: Interval) -> Interval:
+            lower = a.lower
+            lower_inc = a.lower_inclusive
+            if b.lower is not None:
+                if (
+                    lower is None
+                    or b.lower > lower
+                    or (b.lower == lower and not b.lower_inclusive)
+                ):
+                    lower = b.lower
+                    lower_inc = b.lower_inclusive
+                elif b.lower == lower:
+                    lower_inc = lower_inc and b.lower_inclusive
+
+            upper = a.upper
+            upper_inc = a.upper_inclusive
+            if b.upper is not None:
+                if (
+                    upper is None
+                    or b.upper < upper
+                    or (b.upper == upper and not b.upper_inclusive)
+                ):
+                    upper = b.upper
+                    upper_inc = b.upper_inclusive
+                elif b.upper == upper:
+                    upper_inc = upper_inc and b.upper_inclusive
+
+            return Interval(
+                lower=lower,
+                upper=upper,
+                lower_inclusive=lower_inc,
+                upper_inclusive=upper_inc,
+            )
+
+        combined = intervals[0]
+        for iv in intervals[1:]:
+            combined = _intersect(combined, iv)
+        return combined
+
     return None
