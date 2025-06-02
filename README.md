@@ -7,7 +7,7 @@ jp-range is a small library for parsing Japanese numeric range expressions. It r
 ```bash
 pip install jp-range
 # or install from GitHub
-pip install git+https://github.com/neka-nat/jp-range.git
+pip install git+https://github.com/first-automation/jp-range.git
 ```
 
 Python 3.12 or later is required.
