@@ -53,3 +53,38 @@ class Interval(BaseModel):
         else:
             closed = "neither"
         return pd.Interval(left, right, closed=closed)
+
+    def intersect(self, other: "Interval") -> "Interval":
+        """Return the intersection of this interval with another."""
+        lower = self.lower
+        lower_inc = self.lower_inclusive
+        if other.lower is not None:
+            if (
+                lower is None
+                or other.lower > lower
+                or (other.lower == lower and not other.lower_inclusive)
+            ):
+                lower = other.lower
+                lower_inc = other.lower_inclusive
+            elif other.lower == lower:
+                lower_inc = lower_inc and other.lower_inclusive
+
+        upper = self.upper
+        upper_inc = self.upper_inclusive
+        if other.upper is not None:
+            if (
+                upper is None
+                or other.upper < upper
+                or (other.upper == upper and not other.upper_inclusive)
+            ):
+                upper = other.upper
+                upper_inc = other.upper_inclusive
+            elif other.upper == upper:
+                upper_inc = upper_inc and other.upper_inclusive
+
+        return Interval(
+            lower=lower,
+            upper=upper,
+            lower_inclusive=lower_inc,
+            upper_inclusive=upper_inc,
+        )

@@ -7,6 +7,28 @@ import neologdn
 
 from .interval import Interval
 
+# Translation table for common Japanese full-width characters
+_TRANSLATION_TABLE = str.maketrans(
+    {
+        "０": "0",
+        "１": "1",
+        "２": "2",
+        "３": "3",
+        "４": "4",
+        "５": "5",
+        "６": "6",
+        "７": "7",
+        "８": "8",
+        "９": "9",
+        "－": "-",
+        "ー": "-",
+        "−": "-",
+        "―": "-",
+        "‐": "-",
+        "．": ".",
+    }
+)
+
 
 def _normalize(text: str) -> str:
     """Normalize text for pattern matching."""
@@ -15,27 +37,7 @@ def _normalize(text: str) -> str:
     text = neologdn.normalize(text)
     text = text.replace("マイナス", "-").replace("プラス", "+")
     text = re.sub(r"\s+", "", text)
-    table = str.maketrans(
-        {
-            "０": "0",
-            "１": "1",
-            "２": "2",
-            "３": "3",
-            "４": "4",
-            "５": "5",
-            "６": "6",
-            "７": "7",
-            "８": "8",
-            "９": "9",
-            "－": "-",
-            "ー": "-",
-            "−": "-",
-            "―": "-",
-            "‐": "-",
-            "．": ".",
-        }
-    )
-    return text.translate(table)
+    return text.translate(_TRANSLATION_TABLE)
 
 
 # Numeric pattern supporting optional decimal and sign with trailing units
@@ -282,6 +284,15 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
 ]
 
 
+def _parse_atomic(segment: str) -> Interval | None:
+    """Parse a single atomic range expression."""
+    for pattern, builder in _PATTERNS:
+        m = pattern.fullmatch(segment)
+        if m:
+            return builder(m)
+    return None
+
+
 def parse_jp_range(text: str) -> Interval:
     """Parse a Japanese numeric range expression into an :class:`Interval`.
 
@@ -299,13 +310,6 @@ def parse_jp_range(text: str) -> Interval:
     text = _normalize(text)
     text = text.strip()
 
-    def _parse_atomic(segment: str) -> Interval | None:
-        for pattern, builder in _PATTERNS:
-            m = pattern.fullmatch(segment)
-            if m:
-                return builder(m)
-        return None
-
     result = _parse_atomic(text)
     if result is not None:
         return result
@@ -319,43 +323,9 @@ def parse_jp_range(text: str) -> Interval:
                 return None
             intervals.append(r)
 
-        def _intersect(a: Interval, b: Interval) -> Interval:
-            lower = a.lower
-            lower_inc = a.lower_inclusive
-            if b.lower is not None:
-                if (
-                    lower is None
-                    or b.lower > lower
-                    or (b.lower == lower and not b.lower_inclusive)
-                ):
-                    lower = b.lower
-                    lower_inc = b.lower_inclusive
-                elif b.lower == lower:
-                    lower_inc = lower_inc and b.lower_inclusive
-
-            upper = a.upper
-            upper_inc = a.upper_inclusive
-            if b.upper is not None:
-                if (
-                    upper is None
-                    or b.upper < upper
-                    or (b.upper == upper and not b.upper_inclusive)
-                ):
-                    upper = b.upper
-                    upper_inc = b.upper_inclusive
-                elif b.upper == upper:
-                    upper_inc = upper_inc and b.upper_inclusive
-
-            return Interval(
-                lower=lower,
-                upper=upper,
-                lower_inclusive=lower_inc,
-                upper_inclusive=upper_inc,
-            )
-
         combined = intervals[0]
         for iv in intervals[1:]:
-            combined = _intersect(combined, iv)
+            combined = combined.intersect(iv)
         return combined
 
     return None
