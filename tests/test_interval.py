@@ -140,6 +140,28 @@ def test_interval_notation():
     assert r.upper_inclusive
 
 
+def test_max_min():
+    r = parse_jp_range("最大10、最小マイナス5")
+    assert r.lower == -5
+    assert r.upper == 10
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
+def test_max_value_min_value():
+    r = parse_jp_range("最大値100 最小値10")
+    assert r.lower == 10
+    assert r.upper == 100
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
+def test_dai_sho():
+    r = parse_jp_range("大3,小1")
+    assert r.lower == 1
+    assert r.upper == 3
+
+
 def test_parse_failure_returns_none():
     r = parse_jp_range("unknown")
     assert r is None

@@ -13,6 +13,7 @@ def _normalize(text: str) -> str:
     # Preserve range connectors by replacing tildes before normalization
     text = text.replace("〜", "-").replace("～", "-")
     text = neologdn.normalize(text)
+    text = text.replace("マイナス", "-").replace("プラス", "+")
     text = re.sub(r"\s+", "", text)
     table = str.maketrans(
         {
@@ -117,6 +118,16 @@ def _interval_notation(m: re.Match[str]) -> Interval:
     )
 
 
+def _max_min(m: re.Match[str]) -> Interval:
+    """Build Interval from patterns like '最大10最小1'."""
+    return Interval(
+        lower=_f(m.group(2)),
+        upper=_f(m.group(1)),
+        lower_inclusive=True,
+        upper_inclusive=True,
+    )
+
+
 # Precompiled patterns for various Japanese range expressions
 _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     # Standard interval notation like "(2,3]" or "[1,5)"
@@ -138,6 +149,11 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     (
         re.compile(rf"^{_NUM}と{_NUM}の?間$"),
         _range_builder(False, False),
+    ),
+    # 最大A、最小B / 最大値A 最小値B / 大A小B
+    (
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*(?:最小(?:値)?|小){_NUM}$"),
+        _max_min,
     ),
     # A以上B以下 (allow connectors like commas or words between bounds)
     (
