@@ -128,6 +128,16 @@ def _max_min(m: re.Match[str]) -> Interval:
     )
 
 
+def _max_lower_lt(m: re.Match[str]) -> Interval:
+    """Build Interval from patterns like '最大10、-5未満'."""
+    return Interval(
+        lower=_f(m.group(2)),
+        upper=_f(m.group(1)),
+        lower_inclusive=False,
+        upper_inclusive=True,
+    )
+
+
 # Precompiled patterns for various Japanese range expressions
 _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     # Standard interval notation like "(2,3]" or "[1,5)"
@@ -154,6 +164,11 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     (
         re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*(?:最小(?:値)?|小){_NUM}$"),
         _max_min,
+    ),
+    # 最大A、B未満
+    (
+        re.compile(rf"^(?:最大(?:値)?|大){_NUM}\D*{_NUM}未満$"),
+        _max_lower_lt,
     ),
     # A以上B以下 (allow connectors like commas or words between bounds)
     (

@@ -162,6 +162,14 @@ def test_dai_sho():
     assert r.upper == 3
 
 
+def test_max_with_lt_mixed():
+    r = parse_jp_range("最大10,-5未満")
+    assert r.lower == -5
+    assert r.upper == 10
+    assert not r.lower_inclusive
+    assert r.upper_inclusive
+
+
 def test_parse_failure_returns_none():
     r = parse_jp_range("unknown")
     assert r is None
