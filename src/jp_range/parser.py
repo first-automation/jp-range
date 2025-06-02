@@ -107,8 +107,23 @@ def _plus_minus(m: re.Match[str]) -> Interval:
     )
 
 
+def _interval_notation(m: re.Match[str]) -> Interval:
+    left, lower, upper, right = m.groups()
+    return Interval(
+        lower=_f(lower),
+        upper=_f(upper),
+        lower_inclusive=left == "[",
+        upper_inclusive=right == "]",
+    )
+
+
 # Precompiled patterns for various Japanese range expressions
 _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
+    # Standard interval notation like "(2,3]" or "[1,5)"
+    (
+        re.compile(rf"^([\(\[]){_NUM},{_NUM}([\)\]])$"),
+        _interval_notation,
+    ),
     # 20から30 / 20から30まで
     (
         re.compile(rf"^{_NUM}から{_NUM}(?:まで)?$"),
@@ -222,13 +237,9 @@ def parse_jp_range(text: str) -> Interval:
 
     Returns
     -------
-    Interval
-        Parsed interval representation.
-
-    Raises
-    ------
-    ValueError
-        If the text cannot be parsed.
+    Interval | None
+        Parsed interval representation, or ``None`` if the text cannot be
+        parsed.
     """
     text = _normalize(text)
     text = text.strip()
@@ -236,4 +247,4 @@ def parse_jp_range(text: str) -> Interval:
         m = pattern.fullmatch(text)
         if m:
             return builder(m)
-    raise ValueError(f"Cannot parse range: {text}")
+    return None

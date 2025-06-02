@@ -8,7 +8,7 @@ from .interval import Interval
 from .parser import parse_jp_range
 
 
-def parse(text: str) -> Interval:
+def parse(text: str) -> Interval | None:
     """Alias for :func:`parse_jp_range`."""
 
     return parse_jp_range(text)
@@ -20,7 +20,8 @@ def parse_series(
     """Parse a ``Series`` or ``DataFrame`` of textual ranges.
 
     Each element is parsed using :func:`parse_jp_range` and replaced
-    with an :class:`Interval` instance. Non-string values are left as is.
+    with an :class:`Interval` instance or ``None`` when parsing fails.
+    Non-string values are left as is.
     """
 
     if isinstance(obj, pd.Series):
