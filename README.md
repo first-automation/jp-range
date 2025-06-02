@@ -40,7 +40,7 @@ from jp_range import parse_series
 
 s = Series(["20～30", "50超", "未満100"])
 result = parse_series(s)
-# result is a Series of Interval objects
+# result is a Series of pandas.Interval objects
 ```
 
 ### Supported expressions
