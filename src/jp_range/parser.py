@@ -10,6 +10,8 @@ from .interval import Interval
 
 def _normalize(text: str) -> str:
     """Normalize text for pattern matching."""
+    # Preserve range connectors by replacing tildes before normalization
+    text = text.replace("〜", "-").replace("～", "-")
     text = neologdn.normalize(text)
     text = re.sub(r"\s+", "", text)
     table = str.maketrans(
@@ -114,7 +116,7 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     ),
     # 20〜30, 20-30, 20～30
     (
-        re.compile(rf"^{_NUM}[〜～\-－ー―‐]{1}{_NUM}$"),
+        re.compile(rf"^{_NUM}[〜～\-－ー―‐]{{1}}{_NUM}$"),
         _range_builder(True, True),
     ),
     # AとBの間
@@ -190,6 +192,11 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     # Upper bound exclusive
     (
         re.compile(rf"^{_NUM}(?:未満|より小さい|より下|を?下回る|未到達)$"),
+        _single_upper(False),
+    ),
+    # Upper bound with keyword before the number (e.g. "未満100")
+    (
+        re.compile(rf"^未満{_NUM}$"),
         _single_upper(False),
     ),
     # Approximate: A前後 / A程度 / Aくらい
