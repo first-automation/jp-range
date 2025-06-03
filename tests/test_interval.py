@@ -7,6 +7,8 @@ from jp_range import Interval, parse_jp_range
 @pytest.mark.parametrize(
     "text, lower, upper, lower_inc, upper_inc, contains, not_contains",
     [
+        ("", None, None, False, False, [], []),
+        (1, 1, 1, True, True, [1], []),
         ("20から30", 20, 30, True, True, [20, 25, 30], [19, 31]),
         ("30以上40以下", 30, 40, True, True, [], []),
         ("30以上,40以下", 30, 40, True, True, [], []),
@@ -23,6 +25,10 @@ from jp_range import Interval, parse_jp_range
         ("100未満", None, 100, False, False, [], []),
         ("90前後", 85.5, 94.5, True, True, [], []),
         ("90m程度", 85.5, 94.5, True, True, [], []),
+        # ("±10", -10, 10, True, True, [], []),
+        # ("プラスマイナス10", -10, 10, True, True, [], []),
+        ("1±0.1", 0.9, 1.1, True, True, [], []),
+        # ("1プラスマイナス0.1", 0.9, 1.1, True, True, [], []),
         ("(2,3]", 2, 3, False, True, [], []),
         ("最大10、最小マイナス5", -5, 10, True, True, [], []),
         ("最大値100 最小値10", 10, 100, True, True, [], []),
@@ -53,9 +59,11 @@ def test_parse_ranges(text, lower, upper, lower_inc, upper_inc, contains, not_co
         assert not r.contains(v)
 
 
-def test_parse_failure_returns_none():
+def test_parse_failure_returns_empty_interval():
     r = parse_jp_range("unknown")
-    assert r is None
+    assert r.lower is None
+    assert r.upper is None
+    assert not r.has_range()
 
 
 def test_to_pd_interval():

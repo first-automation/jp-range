@@ -66,7 +66,7 @@ def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.8) -> pd.Inde
         if len(non_empty) == 0:
             continue
         success_ratio = (
-            non_empty.apply(lambda v: parse_jp_range(v) is not None if isinstance(v, str) else False)
+            non_empty.apply(lambda v: parse_jp_range(v).has_range() if isinstance(v, str) else False)
             .mean()
         )
         if success_ratio >= threshold:

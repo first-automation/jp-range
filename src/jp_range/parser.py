@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Sequence
 import re
 
 import neologdn
@@ -296,7 +296,16 @@ def _parse_atomic(segment: str) -> Interval | None:
     return None
 
 
-def parse_jp_range(text: str) -> Interval:
+def _try_parse_float(text: str) -> float | None:
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def parse_jp_range(
+    text: str | int | float | tuple[int | float, ...] | list[int | float]
+) -> Interval:
     """Parse a Japanese numeric range expression into an :class:`Interval`.
 
     Parameters
@@ -310,6 +319,30 @@ def parse_jp_range(text: str) -> Interval:
         Parsed interval representation, or ``None`` if the text cannot be
         parsed.
     """
+    if isinstance(text, (tuple, list)):
+        return Interval(
+            lower=min(text),
+            upper=max(text),
+            lower_inclusive=True,
+            upper_inclusive=True,
+        )
+    if isinstance(text, (int, float)):
+        return Interval(
+            lower=text,
+            upper=text,
+            lower_inclusive=True,
+            upper_inclusive=True,
+        )
+    if isinstance(text, str):
+        num = _try_parse_float(text)
+        if num is not None:
+            return Interval(
+                lower=num,
+                upper=num,
+                lower_inclusive=True,
+                upper_inclusive=True,
+            )
+
     text = _normalize(text)
     text = text.strip()
 
@@ -323,7 +356,7 @@ def parse_jp_range(text: str) -> Interval:
         for part in parts:
             r = _parse_atomic(part)
             if r is None:
-                return None
+                return Interval()
             intervals.append(r)
 
         combined = intervals[0]
@@ -338,4 +371,4 @@ def parse_jp_range(text: str) -> Interval:
         if left is not None and right is not None:
             return left.intersect(right)
 
-    return None
+    return Interval()
