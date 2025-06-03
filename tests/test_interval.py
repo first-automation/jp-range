@@ -184,6 +184,22 @@ def test_gt_with_small_mixed():
     assert not r.lower_inclusive
 
 
+def test_reverse_upper_lower():
+    r = parse_jp_range("30以下20以上")
+    assert r.lower == 20
+    assert r.upper == 30
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
+def test_reverse_min_max():
+    r = parse_jp_range("最小-5最大５０")
+    assert r.lower == -5
+    assert r.upper == 50
+    assert r.lower_inclusive is True
+    assert r.upper_inclusive is True
+
+
 def test_parse_failure_returns_none():
     r = parse_jp_range("unknown")
     assert r is None

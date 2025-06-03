@@ -331,4 +331,11 @@ def parse_jp_range(text: str) -> Interval:
             combined = combined.intersect(iv)
         return combined
 
+    # Try concatenated expressions without delimiters (e.g. "30以下20以上")
+    for i in range(1, len(text)):
+        left = _parse_atomic(text[:i])
+        right = _parse_atomic(text[i:])
+        if left is not None and right is not None:
+            return left.intersect(right)
+
     return None
