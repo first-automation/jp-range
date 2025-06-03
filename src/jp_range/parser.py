@@ -35,6 +35,7 @@ def _normalize(text: str) -> str:
     # Preserve range connectors by replacing tildes before normalization
     text = text.replace("〜", "-").replace("～", "-")
     text = neologdn.normalize(text)
+    text = text.replace("プラスマイナス", "±")
     text = text.replace("マイナス", "-").replace("プラス", "+")
     text = re.sub(r"\s+", "", text)
     return text.translate(_TRANSLATION_TABLE)
@@ -125,6 +126,12 @@ def _plus_minus(m: re.Match[str]) -> Interval:
     return Interval(
         lower=val - delta, upper=val + delta, lower_inclusive=True, upper_inclusive=True
     )
+
+
+def _plus_minus_zero(m: re.Match[str]) -> Interval:
+    """Return interval for expressions like '±10'."""
+    delta = _f(m.group(1))
+    return Interval(lower=-delta, upper=delta, lower_inclusive=True, upper_inclusive=True)
 
 
 def _interval_notation(m: re.Match[str]) -> Interval:
@@ -283,6 +290,11 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     (
         re.compile(rf"^{_NUM}±{_NUM}$"),
         _plus_minus,
+    ),
+    # ±d or プラスマイナスd
+    (
+        re.compile(rf"^±{_NUM}$"),
+        _plus_minus_zero,
     ),
 ]
 
