@@ -1,203 +1,56 @@
 import pandas as pd
+import pytest
 
 from jp_range import Interval, parse_jp_range
 
 
-def test_parse_inclusive_range():
-    r = parse_jp_range("20から30")
-    assert r.lower == 20
-    assert r.upper == 30
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-    assert r.contains(20)
-    assert r.contains(25)
-    assert r.contains(30)
-    assert not r.contains(19)
-    assert not r.contains(31)
-
-
-def test_parse_ge_le():
-    r = parse_jp_range("30以上40以下")
-    assert r.lower == 30
-    assert r.upper == 40
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_parse_ge_le_with_connector():
-    r = parse_jp_range("30以上,40以下")
-    assert r.lower == 30
-    assert r.upper == 40
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_parse_ge_le_with_word_connector():
-    r = parse_jp_range("30以上そして40以下")
-    assert r.lower == 30
-    assert r.upper == 40
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_parse_ge_lt():
-    r = parse_jp_range("40以上50未満")
-    assert r.lower == 40
-    assert r.upper == 50
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is False
-    assert r.contains(40)
-    assert r.contains(49.9)
-    assert not r.contains(50)
-
-
-def test_greater_than():
-    r = parse_jp_range("50より上")
-    assert r.lower == 50
-    assert r.upper is None
-    assert not r.lower_inclusive
-    assert r.contains(51)
-    assert not r.contains(50)
-
-
-def test_less_than():
-    r = parse_jp_range("60より下")
-    assert r.upper == 60
-    assert r.lower is None
-    assert not r.upper_inclusive
-    assert r.contains(59)
-    assert not r.contains(60)
-
-
-def test_normalize_and_remove_spaces():
-    r = parse_jp_range("\u3000４０  以上\u3000５０ 未満\u3000")
-    assert r.lower == 40
-    assert r.upper == 50
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is False
-
-
-def test_tilde_connector():
-    r = parse_jp_range("20〜30")
-    assert r.lower == 20
-    assert r.upper == 30
-
-
-def test_exclusive_inclusive():
-    r = parse_jp_range("70超90以下")
-    assert r.lower == 70
-    assert r.upper == 90
-    assert not r.lower_inclusive
-    assert r.upper_inclusive
-
-
-def test_both_exclusive():
-    r = parse_jp_range("10を超え20未満")
-    assert not r.lower_inclusive
-    assert not r.upper_inclusive
-    assert r.contains(19.9)
-    assert not r.contains(10)
-
-
-def test_single_bound():
-    r = parse_jp_range("80以上")
-    assert r.lower == 80
-    assert r.upper is None
-    assert r.lower_inclusive
-
-
-def test_single_bound_with_unit():
-    r = parse_jp_range("１０個以上")
-    assert r.lower == 10
-    assert r.upper is None
-    assert r.lower_inclusive
-
-
-def test_upper_bound():
-    r = parse_jp_range("100未満")
-    assert r.upper == 100
-    assert r.lower is None
-    assert not r.upper_inclusive
-
-
-def test_approx_range():
-    r = parse_jp_range("90前後")
-    assert round(r.lower, 1) == 85.5
-    assert round(r.upper, 1) == 94.5
-
-
-def test_approx_with_unit():
-    r = parse_jp_range("90m程度")
-    assert round(r.lower, 1) == 85.5
-    assert round(r.upper, 1) == 94.5
-
-
-def test_interval_notation():
-    r = parse_jp_range("(2,3]")
-    assert r.lower == 2
-    assert r.upper == 3
-    assert not r.lower_inclusive
-    assert r.upper_inclusive
-
-
-def test_max_min():
-    r = parse_jp_range("最大10、最小マイナス5")
-    assert r.lower == -5
-    assert r.upper == 10
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_max_value_min_value():
-    r = parse_jp_range("最大値100 最小値10")
-    assert r.lower == 10
-    assert r.upper == 100
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_dai_sho():
-    r = parse_jp_range("大3,小1")
-    assert r.lower == 1
-    assert r.upper == 3
-
-
-def test_max_with_lt_mixed():
-    r = parse_jp_range("最大10,-5未満")
-    assert r.lower == -5
-    assert r.upper == 10
-    assert not r.lower_inclusive
-    assert r.upper_inclusive
-
-
-def test_ge_with_min_mixed():
-    r = parse_jp_range("5以上、最小1")
-    assert r.lower == 5
-    assert r.upper is None
-    assert r.lower_inclusive
-
-
-def test_gt_with_small_mixed():
-    r = parse_jp_range("１００より上、小10")
-    assert r.lower == 100
-    assert r.upper is None
-    assert not r.lower_inclusive
-
-
-def test_reverse_upper_lower():
-    r = parse_jp_range("30以下20以上")
-    assert r.lower == 20
-    assert r.upper == 30
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
-
-
-def test_reverse_min_max():
-    r = parse_jp_range("最小-5最大５０")
-    assert r.lower == -5
-    assert r.upper == 50
-    assert r.lower_inclusive is True
-    assert r.upper_inclusive is True
+@pytest.mark.parametrize(
+    "text, lower, upper, lower_inc, upper_inc, contains, not_contains",
+    [
+        ("20から30", 20, 30, True, True, [20, 25, 30], [19, 31]),
+        ("30以上40以下", 30, 40, True, True, [], []),
+        ("30以上,40以下", 30, 40, True, True, [], []),
+        ("30以上そして40以下", 30, 40, True, True, [], []),
+        ("40以上50未満", 40, 50, True, False, [40, 49.9], [50]),
+        ("50より上", 50, None, False, False, [51], [50]),
+        ("60より下", None, 60, False, False, [59], [60]),
+        ("\u3000４０  以上\u3000５０ 未満\u3000", 40, 50, True, False, [], []),
+        ("20〜30", 20, 30, True, True, [], []),
+        ("70超90以下", 70, 90, False, True, [], []),
+        ("10を超え20未満", 10, 20, False, False, [19.9], [10]),
+        ("80以上", 80, None, True, False, [], []),
+        ("１０個以上", 10, None, True, False, [], []),
+        ("100未満", None, 100, False, False, [], []),
+        ("90前後", 85.5, 94.5, True, True, [], []),
+        ("90m程度", 85.5, 94.5, True, True, [], []),
+        ("(2,3]", 2, 3, False, True, [], []),
+        ("最大10、最小マイナス5", -5, 10, True, True, [], []),
+        ("最大値100 最小値10", 10, 100, True, True, [], []),
+        ("大3,小1", 1, 3, True, True, [], []),
+        ("最大10,-5未満", -5, 10, False, True, [], []),
+        ("5以上、最小1", 5, None, True, False, [], []),
+        ("１００より上、小10", 100, None, False, False, [], []),
+        ("30以下20以上", 20, 30, True, True, [], []),
+        ("最小-5最大５０", -5, 50, True, True, [], []),
+    ],
+)
+def test_parse_ranges(text, lower, upper, lower_inc, upper_inc, contains, not_contains):
+    r = parse_jp_range(text)
+    assert isinstance(r, Interval)
+    if lower is None:
+        assert r.lower is None
+    else:
+        assert r.lower == pytest.approx(lower)
+    if upper is None:
+        assert r.upper is None
+    else:
+        assert r.upper == pytest.approx(upper)
+    assert r.lower_inclusive is lower_inc
+    assert r.upper_inclusive is upper_inc
+    for v in contains:
+        assert r.contains(v)
+    for v in not_contains:
+        assert not r.contains(v)
 
 
 def test_parse_failure_returns_none():
