@@ -1,6 +1,6 @@
 [project]
 name = "jp-range"
-version = "0.3.0"
+version = "0.3.2"
 description = "Utilities for parsing Japanese numeric ranges."
 readme = "README.md"
 authors = [
@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "neologdn>=0.5.4",
     "pandas>=2.2.3",
-    "pydantic>=2.11.5",
+    "pydantic>=2.0",
 ]
 
 [build-system]
