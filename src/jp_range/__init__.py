@@ -74,7 +74,7 @@ def apply_parse(
     raise TypeError("apply_parse expects a pandas Series or DataFrame")
 
 
-def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.0) -> pd.Index:
+def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.5) -> pd.Index:
     """Return DataFrame columns that can be converted to :class:`Interval`.
 
     Parameters
@@ -96,9 +96,9 @@ def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.0) -> pd.Inde
         if len(non_empty) == 0:
             continue
         success_ratio = non_empty.apply(
-            lambda v: parse_jp_range(v).has_range() if isinstance(v, str) else False
+            lambda v: parse_jp_range(v).has_range() if v and isinstance(v, str) else False
         ).mean()
-        if success_ratio >= threshold:
+        if success_ratio > threshold:
             convertible.append(col)
 
     return pd.Index(convertible)

@@ -22,12 +22,20 @@ class Interval(BaseModel):
         upper_val = str(self.upper) if self.upper is not None else "inf"
         return f"{lower_bracket}{lower_val}, {upper_val}{upper_bracket}"
 
+    def is_empty(self) -> bool:
+        """Return True if this interval is empty."""
+        return self.lower is None and self.upper is None
+
     def has_range(self) -> bool:
         """Return True if this interval has a range."""
         return (
-            self.lower is not None
-            and self.upper is not None
-            and self.lower < self.upper
+            (self.lower is None and self.upper is not None)
+            or (self.lower is not None and self.upper is None)
+            or (
+                self.lower is not None
+                and self.upper is not None
+                and self.lower < self.upper
+            )
         )
 
     def contains(self, value: float) -> bool:
@@ -48,8 +56,12 @@ class Interval(BaseModel):
                     return False
         return True
 
-    def to_pd_interval(self) -> pd.Interval:
+    def to_pd_interval(self) -> pd.Interval | None:
         """Return a :class:`pandas.Interval` representation of this interval."""
+        if self.is_empty():
+            return None
+        if not self.has_range():
+            return self.lower
         left = self.lower if self.lower is not None else float("-inf")
         right = self.upper if self.upper is not None else float("inf")
         if self.lower_inclusive and self.upper_inclusive:
