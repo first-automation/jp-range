@@ -70,7 +70,7 @@ def apply_parse(
     raise TypeError("apply_parse expects a pandas Series or DataFrame")
 
 
-def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.8) -> pd.Index:
+def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.0) -> pd.Index:
     """Return DataFrame columns that can be converted to :class:`Interval`.
 
     Parameters
