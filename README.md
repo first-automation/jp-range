@@ -18,7 +18,7 @@ Python 3.12 or later is required.
 - Supports inclusive and exclusive bounds (`以上`, `未満`, etc.)
 - Parses connectors such as `〜`, `-` and `から`
 - Handles single-sided bounds, approximate expressions (`90前後`) and `A±d` notation
-- Integrates with pandas via `parse_series` for `Series` and `DataFrame`
+- Integrates with pandas via `apply_parse` for `Series` and `DataFrame`
 
 ## Usage
 
@@ -36,10 +36,11 @@ print(interval.contains(45))  # True
 
 ```python
 from pandas import Series
-from jp_range import parse_series
+from jp_range import apply_parse
 
+# Convert Series of textual ranges to pandas.Interval
 s = Series(["20～30", "50超", "未満100"])
-result = parse_series(s)
+result = apply_parse(s)
 # result is a Series of pandas.Interval objects
 ```
 
