@@ -47,8 +47,12 @@ def apply_parse(
         name = obj.name or "range"
         return pd.DataFrame(
             {
-                f"{name}_max": converted.map(lambda v: v.upper if isinstance(v, Interval) else None),
-                f"{name}_min": converted.map(lambda v: v.lower if isinstance(v, Interval) else None),
+                f"{name}_max": converted.map(
+                    lambda v: v.upper if isinstance(v, Interval) else None
+                ),
+                f"{name}_min": converted.map(
+                    lambda v: v.lower if isinstance(v, Interval) else None
+                ),
             }
         )
     if isinstance(obj, pd.DataFrame):
@@ -91,14 +95,19 @@ def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.0) -> pd.Inde
         non_empty = s[~s.map(_is_empty)]
         if len(non_empty) == 0:
             continue
-        success_ratio = (
-            non_empty.apply(lambda v: parse_jp_range(v).has_range() if isinstance(v, str) else False)
-            .mean()
-        )
+        success_ratio = non_empty.apply(
+            lambda v: parse_jp_range(v).has_range() if isinstance(v, str) else False
+        ).mean()
         if success_ratio >= threshold:
             convertible.append(col)
 
     return pd.Index(convertible)
 
 
-__all__ = ["Interval", "parse_jp_range", "parse", "apply_parse", "detect_interval_columns"]
+__all__ = [
+    "Interval",
+    "parse_jp_range",
+    "parse",
+    "apply_parse",
+    "detect_interval_columns",
+]

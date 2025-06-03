@@ -24,7 +24,11 @@ class Interval(BaseModel):
 
     def has_range(self) -> bool:
         """Return True if this interval has a range."""
-        return self.lower is not None and self.upper is not None and self.lower < self.upper
+        return (
+            self.lower is not None
+            and self.upper is not None
+            and self.lower < self.upper
+        )
 
     def contains(self, value: float) -> bool:
         """Return True if the value is inside this interval."""

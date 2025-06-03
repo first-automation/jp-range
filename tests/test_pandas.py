@@ -1,7 +1,7 @@
 from pandas import Series, DataFrame, Interval as PdInterval
 import pandas as pd
 
-from jp_range import Interval, parse, parse_jp_range, apply_parse, detect_interval_columns
+from jp_range import parse, parse_jp_range, apply_parse, detect_interval_columns
 
 
 def test_parse_alias():
