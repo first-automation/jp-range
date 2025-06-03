@@ -1,4 +1,5 @@
 from pandas import Series, DataFrame, Interval as PdInterval
+import pandas as pd
 
 from jp_range import Interval, parse, parse_jp_range, apply_parse, detect_interval_columns
 
@@ -41,4 +42,15 @@ def test_detect_interval_columns():
     cols = detect_interval_columns(df, threshold=0.5)
     assert "a" in cols
     assert "b" not in cols
+
+
+def test_apply_parse_split_numeric():
+    df = DataFrame({"range": ["20～30", "50超"]})
+    result = apply_parse(df, split_numeric=True)
+    assert "range_max" in result.columns
+    assert "range_min" in result.columns
+    assert result.loc[0, "range_min"] == 20
+    assert result.loc[0, "range_max"] == 30
+    assert result.loc[1, "range_min"] == 50
+    assert pd.isna(result.loc[1, "range_max"])
 

@@ -17,6 +17,8 @@ def parse(text: str) -> Interval | None:
 def apply_parse(
     obj: Union[pd.Series, pd.DataFrame],
     columns: Sequence[str] | None = None,
+    *,
+    split_numeric: bool = False,
 ) -> Union[pd.Series, pd.DataFrame]:
     """Parse a ``Series`` or ``DataFrame`` of textual ranges.
 
@@ -25,21 +27,45 @@ def apply_parse(
     Non-string values are left as is.
     When ``obj`` is a ``DataFrame``, a subset of ``columns`` can be specified
     to apply the conversion. If not provided, all columns are converted.
+    When ``split_numeric`` is ``True`` and ``obj`` is a ``DataFrame``,
+    the specified columns are replaced by ``<column>_max`` and ``<column>_min``
+    numeric columns holding the upper and lower bounds.
     """
 
     def _convert(val: object):
         if isinstance(val, str):
             r = parse_jp_range(val)
-            return r.to_pd_interval() if r is not None else None
+            if r is not None:
+                return r if split_numeric else r.to_pd_interval()
+            return None
         return val
 
     if isinstance(obj, pd.Series):
-        return obj.apply(_convert)
+        converted = obj.apply(_convert)
+        if not split_numeric:
+            return converted
+        name = obj.name or "range"
+        return pd.DataFrame(
+            {
+                f"{name}_max": converted.map(lambda v: v.upper if isinstance(v, Interval) else None),
+                f"{name}_min": converted.map(lambda v: v.lower if isinstance(v, Interval) else None),
+            }
+        )
     if isinstance(obj, pd.DataFrame):
         result = obj.copy()
         cols = obj.columns if columns is None else columns
         for c in cols:
-            result[c] = result[c].apply(_convert)
+            converted = result[c].apply(_convert)
+            if split_numeric:
+                result[f"{c}_max"] = converted.map(
+                    lambda v: v.upper if isinstance(v, Interval) else None
+                )
+                result[f"{c}_min"] = converted.map(
+                    lambda v: v.lower if isinstance(v, Interval) else None
+                )
+                result.drop(columns=[c], inplace=True)
+            else:
+                result[c] = converted
         return result
     raise TypeError("apply_parse expects a pandas Series or DataFrame")
 
