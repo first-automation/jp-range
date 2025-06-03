@@ -1,6 +1,6 @@
 [project]
 name = "jp-range"
-version = "0.2.0"
+version = "0.2.1"
 description = "Utilities for parsing Japanese numeric ranges."
 readme = "README.md"
 authors = [
