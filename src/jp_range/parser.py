@@ -43,10 +43,22 @@ def _normalize(text: str) -> str:  # noqa: D401
 
 
 # Numeric pattern supporting optional decimal and sign with trailing units
-_NUM = r"([-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?)(?:[a-zA-Zぁ-んァ-ン一-龥]*)"
+# The core numeric portion is exposed separately for serial-number heuristics.
+_NUM_CORE = r"[-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?"
+_NUM = rf"({_NUM_CORE})(?:[a-zA-Zぁ-んァ-ン一-龥]*)"
 # Separator pattern used between two numbers.  Excludes sign characters so
 # that we don't swallow the sign of the next number.
 _SEP = r"[^\d+-]*"
+
+# Strings like "21K-1310" are likely product serial numbers.  Ignore them
+# by detecting when alphabetic units are attached only to the first number.
+_SERIAL_FIRST_ONLY = re.compile(rf"^{_NUM_CORE}[a-zA-Zぁ-んァ-ン一-龥]+-{_NUM_CORE}$")
+
+# Serial-like ranges sometimes contain different units for each number,
+# e.g. "21K-131A".  Such patterns should also be ignored.
+_SERIAL_UNIT_MISMATCH = re.compile(
+    rf"^{_NUM_CORE}(?P<u1>[a-zA-Zぁ-んァ-ン一-龥]+)-{_NUM_CORE}(?P<u2>[a-zA-Zぁ-んァ-ン一-龥]+)$"
+)
 
 
 def _f(num: str) -> float:  # noqa: D401 short descr
@@ -229,6 +241,16 @@ def parse_jp_range(
 
     # Ignore strings containing numbers with leading zeros (e.g. serial numbers)
     if re.search(r'(?:^|[^0-9])0[0-9]+', text):
+        return Interval()
+
+    # Ignore patterns like "21K-1310" where a unit is attached only to the
+    # first number and not the second.
+    if _SERIAL_FIRST_ONLY.fullmatch(text):
+        return Interval()
+
+    # Ignore "21K-131A" where units differ between the two numbers.
+    m = _SERIAL_UNIT_MISMATCH.fullmatch(text)
+    if m and m.group("u1").lower() != m.group("u2").lower():
         return Interval()
 
     result = _parse_atomic(text)
