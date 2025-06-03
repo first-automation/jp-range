@@ -42,6 +42,10 @@ from jp_range import apply_parse
 s = Series(["20～30", "50超", "未満100"])
 result = apply_parse(s)
 # result is a Series of pandas.Interval objects
+
+# Expand columns into numeric min/max
+df = apply_parse(s.to_frame(name="range"), split_numeric=True)
+# df has columns "range_max" and "range_min"
 ```
 
 ### Supported expressions
