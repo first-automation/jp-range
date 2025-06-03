@@ -1,6 +1,6 @@
 """Utilities for parsing Japanese numeric ranges."""
 
-from typing import Union
+from typing import Union, Sequence
 
 import pandas as pd
 
@@ -14,14 +14,17 @@ def parse(text: str) -> Interval | None:
     return parse_jp_range(text)
 
 
-def parse_series(
-    obj: Union[pd.Series, pd.DataFrame]
+def apply_parse(
+    obj: Union[pd.Series, pd.DataFrame],
+    columns: Sequence[str] | None = None,
 ) -> Union[pd.Series, pd.DataFrame]:
     """Parse a ``Series`` or ``DataFrame`` of textual ranges.
 
     Each element is parsed using :func:`parse_jp_range` and replaced
     with a :class:`pandas.Interval` instance or ``None`` when parsing fails.
     Non-string values are left as is.
+    When ``obj`` is a ``DataFrame``, a subset of ``columns`` can be specified
+    to apply the conversion. If not provided, all columns are converted.
     """
 
     def _convert(val: object):
@@ -33,8 +36,43 @@ def parse_series(
     if isinstance(obj, pd.Series):
         return obj.apply(_convert)
     if isinstance(obj, pd.DataFrame):
-        return obj.applymap(_convert)
-    raise TypeError("parse_series expects a pandas Series or DataFrame")
+        result = obj.copy()
+        cols = obj.columns if columns is None else columns
+        for c in cols:
+            result[c] = result[c].apply(_convert)
+        return result
+    raise TypeError("apply_parse expects a pandas Series or DataFrame")
 
 
-__all__ = ["Interval", "parse_jp_range", "parse", "parse_series"]
+def detect_interval_columns(df: pd.DataFrame, threshold: float = 0.8) -> pd.Index:
+    """Return DataFrame columns that can be converted to :class:`Interval`.
+
+    Parameters
+    ----------
+    df:
+        Target DataFrame.
+    threshold:
+        Minimum ratio of successfully parsed non-empty values required for a
+        column to be considered convertible.
+    """
+
+    def _is_empty(x: object) -> bool:
+        return pd.isna(x) or (isinstance(x, str) and x.strip() == "")
+
+    convertible: list[str] = []
+    for col in df.columns:
+        s = df[col]
+        non_empty = s[~s.map(_is_empty)]
+        if len(non_empty) == 0:
+            continue
+        success_ratio = (
+            non_empty.apply(lambda v: parse_jp_range(v) is not None if isinstance(v, str) else False)
+            .mean()
+        )
+        if success_ratio >= threshold:
+            convertible.append(col)
+
+    return pd.Index(convertible)
+
+
+__all__ = ["Interval", "parse_jp_range", "parse", "apply_parse", "detect_interval_columns"]
