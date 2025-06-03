@@ -227,6 +227,10 @@ def parse_jp_range(
 
     text = _normalize(text).strip()
 
+    # Ignore strings containing numbers with leading zeros (e.g. serial numbers)
+    if re.search(r'(?:^|[^0-9])0[0-9]+', text):
+        return Interval()
+
     result = _parse_atomic(text)
     if result is not None:
         return result
