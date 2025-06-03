@@ -75,6 +75,16 @@ def test_to_pd_interval():
     assert pd_interval.closed == "left"
 
 
-def test_ignore_serial_number_like_strings():
-    r = parse_jp_range("21K-0131")
-    assert r.is_empty()
+@pytest.mark.parametrize(
+    "text, is_empty",
+    [
+        ("21K-0131", True),  # leading zero suggests a serial number
+        ("21K-1310", True),  # unit only on the first number
+        ("21-1310K", False),  # unit allowed at the end
+        ("21k-1310k", False),  # unit on both numbers
+        ("21K-131A", True),  # mismatched units
+    ],
+)
+def test_serial_like_ranges(text, is_empty):
+    r = parse_jp_range(text)
+    assert r.is_empty() is is_empty
