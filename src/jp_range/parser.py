@@ -18,6 +18,54 @@ from .interval import Interval
 # full‑width wave‑dash U+301C (〜) into it.
 _CONNECTOR_CHARS = "〜～~ー－−―‐"
 
+# Hyphen-like characters that we treat specially. When one of these
+# appears as a range connector, both sides must be pure digits to be
+# considered a numeric range.
+_HYPHEN_CHARS = "‐-–—―"
+
+# Units that are allowed to trail a numeric token. Any alphabetic
+# sequence not in this list causes the token to be treated as a code.
+ALLOWED_UNITS = {"kg", "g", "m", "cm", "mm", "℃", "%", "％"}
+
+_UNIT_RE = re.compile(r"^\d+(?:\.\d+)?(?:" + "|".join(ALLOWED_UNITS) + r")?$")
+
+NEG_PATTERNS = [
+    re.compile(r"^[0-9]{1,4}[A-Z][0-9A-Z-]{2,}$"),
+    re.compile(r"^[A-Z]{2}[0-9]{4,}$"),
+    re.compile(r"^[A-Z0-9]{3,}-[A-Z0-9]{3,}$"),
+]
+
+_HYPHEN_RANGE_RE = re.compile(r"^\d{1,4}(?:,\d{3})*-\d{1,4}(?:,\d{3})*$")
+
+
+def _contains_unrecognized_alpha(text: str) -> bool:
+    for alpha in re.findall(r"[A-Za-z]+", text):
+        if alpha not in ALLOWED_UNITS:
+            return True
+    return False
+
+
+def _is_hyphen_range(text: str) -> bool:
+    return bool(_HYPHEN_RANGE_RE.fullmatch(text))
+
+
+def _looks_like_code(s: str) -> bool:
+    return any(p.match(s) for p in NEG_PATTERNS)
+
+
+def _should_skip(text: str) -> bool:
+    if _looks_like_code(text):
+        return True
+    if re.search(r"\d{8,}", text):
+        return True
+    if _contains_unrecognized_alpha(text):
+        return True
+    if re.search(f"[{_HYPHEN_CHARS}]", text):
+        normal = _normalize(text)
+        if not _is_hyphen_range(normal):
+            return True
+    return False
+
 
 def _normalize(text: str) -> str:  # noqa: D401
     """Return a *minimal* normalised representation for pattern matching."""
@@ -224,6 +272,8 @@ def parse_jp_range(
             return Interval(
                 lower=num, upper=num, lower_inclusive=True, upper_inclusive=True
             )
+        if _should_skip(text):
+            return Interval()
 
     text = _normalize(text).strip()
 

@@ -73,3 +73,10 @@ def test_to_pd_interval():
     assert pd_interval.left == 1
     assert pd_interval.right == 3
     assert pd_interval.closed == "left"
+
+
+def test_code_like_strings_are_rejected():
+    r = parse_jp_range("21K-0131")
+    assert r.is_empty()
+    r = parse_jp_range("AB12345")
+    assert r.is_empty()
