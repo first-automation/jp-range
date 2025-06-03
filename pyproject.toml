@@ -1,7 +1,7 @@
 [project]
 name = "jp-range"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Utilities for parsing Japanese numeric ranges."
 readme = "README.md"
 authors = [
     { name = "neka-nat", email = "nekanat.stock@gmail.com" }
