@@ -156,11 +156,20 @@ def _max_min(m: re.Match[str]) -> Interval:
     )
 
 
-def _max_lower_lt(m: re.Match[str]) -> Interval:
+def _min_lower_lt(m: re.Match[str]) -> Interval:
     return Interval(
-        lower=_f(m.group(2)),
-        upper=_f(m.group(1)),
-        lower_inclusive=False,
+        lower=_f(m.group(1)),
+        upper=_f(m.group(2)),
+        lower_inclusive=True,
+        upper_inclusive=False,
+    )
+
+
+def _min_lower_le(m: re.Match[str]) -> Interval:
+    return Interval(
+        lower=_f(m.group(1)),
+        upper=_f(m.group(2)),
+        lower_inclusive=True,
         upper_inclusive=True,
     )
 
@@ -174,7 +183,8 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
         re.compile(rf"^(?:最大(?:値)?|大){_NUM}{_SEP}(?:最小(?:値)?|小){_NUM}$"),
         _max_min,
     ),
-    (re.compile(rf"^(?:最大(?:値)?|大){_NUM}{_SEP}{_NUM}未満$"), _max_lower_lt),
+    (re.compile(rf"^(?:最小(?:値)?|小){_NUM}{_SEP}{_NUM}未満$"), _min_lower_lt),
+    (re.compile(rf"^(?:最小(?:値)?|小){_NUM}{_SEP}{_NUM}以下$"), _min_lower_le),
     (re.compile(rf"^(?:最大(?:値)?|大){_NUM}$"), _single_max),
     (re.compile(rf"^(?:最小(?:値)?|小){_NUM}$"), _single_min),
     (re.compile(rf"^{_NUM}以上{_SEP}{_NUM}以下$"), _range_builder(True, True)),

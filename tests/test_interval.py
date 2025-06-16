@@ -33,7 +33,7 @@ from jp_range import Interval, parse_jp_range
         ("最大10、最小マイナス5", -5, 10, True, True, [], []),
         ("最大値100 最小値10", 10, 100, True, True, [], []),
         ("大3,小1", 1, 3, True, True, [], []),
-        ("最大10,-5未満", -5, 10, False, True, [], []),
+        ("最小-10,-5未満", -10, -5, True, False, [], []),
         ("5以上、最小1", 5, None, True, False, [], []),
         ("１００より上、小10", 100, None, False, False, [], []),
         ("30以下20以上", 20, 30, True, True, [], []),
