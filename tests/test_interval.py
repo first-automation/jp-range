@@ -38,6 +38,8 @@ from jp_range import Interval, parse_jp_range
         ("１００より上、小10", 100, None, False, False, [], []),
         ("30以下20以上", 20, 30, True, True, [], []),
         ("最小-5最大５０", -5, 50, True, True, [], []),
+        ("30未満最小10", 10, 30, True, False, [], []),
+        ("20以下10より大きい", 10, 20, False, True, [], []),
     ],
 )
 def test_parse_ranges(text, lower, upper, lower_inc, upper_inc, contains, not_contains):
