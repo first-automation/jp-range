@@ -79,6 +79,20 @@ def _range_builder(
     return _build
 
 
+def _range_builder_rev(
+    lower_inclusive: bool, upper_inclusive: bool
+) -> Callable[[re.Match[str]], Interval]:
+    def _build(m: re.Match[str]) -> Interval:  # noqa: WPS430
+        return Interval(
+            lower=_f(m.group(2)),
+            upper=_f(m.group(1)),
+            lower_inclusive=lower_inclusive,
+            upper_inclusive=upper_inclusive,
+        )
+
+    return _build
+
+
 def _single_lower(inclusive: bool) -> Callable[[re.Match[str]], Interval]:
     def _build(m: re.Match[str]) -> Interval:  # noqa: WPS430
         return Interval(
@@ -185,18 +199,30 @@ _PATTERNS: list[tuple[re.Pattern[str], Callable[[re.Match[str]], Interval]]] = [
     ),
     (re.compile(rf"^(?:最小(?:値)?|小){_NUM}{_SEP}{_NUM}未満$"), _min_lower_lt),
     (re.compile(rf"^(?:最小(?:値)?|小){_NUM}{_SEP}{_NUM}以下$"), _min_lower_le),
+    (re.compile(rf"^{_NUM}未満{_SEP}(?:最小(?:値)?|小){_NUM}$"), _range_builder_rev(True, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}(?:最小(?:値)?|小){_NUM}$"), _range_builder_rev(True, True)),
     (re.compile(rf"^(?:最大(?:値)?|大){_NUM}$"), _single_max),
     (re.compile(rf"^(?:最小(?:値)?|小){_NUM}$"), _single_min),
     (re.compile(rf"^{_NUM}以上{_SEP}{_NUM}以下$"), _range_builder(True, True)),
     (re.compile(rf"^{_NUM}以上{_SEP}{_NUM}未満$"), _range_builder(True, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}{_NUM}以上$"), _range_builder_rev(True, True)),
+    (re.compile(rf"^{_NUM}未満{_SEP}{_NUM}以上$"), _range_builder_rev(True, False)),
     (re.compile(rf"^{_NUM}超{_SEP}{_NUM}以下$"), _range_builder(False, True)),
     (re.compile(rf"^{_NUM}超{_SEP}{_NUM}未満$"), _range_builder(False, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}{_NUM}超$"), _range_builder_rev(False, True)),
+    (re.compile(rf"^{_NUM}未満{_SEP}{_NUM}超$"), _range_builder_rev(False, False)),
     (re.compile(rf"^{_NUM}を?超え{_SEP}{_NUM}以下$"), _range_builder(False, True)),
     (re.compile(rf"^{_NUM}を?超え{_SEP}{_NUM}未満$"), _range_builder(False, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}{_NUM}を?超え$"), _range_builder_rev(False, True)),
+    (re.compile(rf"^{_NUM}未満{_SEP}{_NUM}を?超え$"), _range_builder_rev(False, False)),
     (re.compile(rf"^{_NUM}を?上回り{_SEP}{_NUM}以下$"), _range_builder(False, True)),
     (re.compile(rf"^{_NUM}を?上回り{_SEP}{_NUM}未満$"), _range_builder(False, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}{_NUM}を?上回り$"), _range_builder_rev(False, True)),
+    (re.compile(rf"^{_NUM}未満{_SEP}{_NUM}を?上回り$"), _range_builder_rev(False, False)),
     (re.compile(rf"^{_NUM}より大きい{_SEP}{_NUM}以下$"), _range_builder(False, True)),
     (re.compile(rf"^{_NUM}より大きい{_SEP}{_NUM}未満$"), _range_builder(False, False)),
+    (re.compile(rf"^{_NUM}以下{_SEP}{_NUM}より大きい$"), _range_builder_rev(False, True)),
+    (re.compile(rf"^{_NUM}未満{_SEP}{_NUM}より大きい$"), _range_builder_rev(False, False)),
     (re.compile(rf"^{_NUM}(?:以上|以降|以後|から)$"), _single_lower(True)),
     (
         re.compile(rf"^{_NUM}(?:超|を?超える|より大きい|より上|を?上回る)$"),
